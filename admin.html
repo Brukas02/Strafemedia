@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUNTER FPV — Content Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0A0D12;--panel:#11161E;--ink:#EDE9E1;--osd:#8C99A8;--accent:#FF5A1F;--line:rgba(140,153,168,.22);}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--ink);font-family:'Archivo',sans-serif;padding:40px 5vw 120px;}
+  ::selection{background:var(--accent);color:var(--bg);}
+  h1{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(34px,6vw,64px);text-transform:uppercase;}
+  .sub{color:var(--osd);margin:10px 0 6px;max-width:720px;line-height:1.6;font-size:15px;}
+  .osd{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.25em;color:var(--accent);
+       margin:44px 0 14px;display:flex;align-items:center;gap:12px;text-transform:uppercase;}
+  .osd::before{content:"";width:34px;height:1px;background:var(--accent);}
+  fieldset{border:1px solid var(--line);background:var(--panel);padding:24px;margin-bottom:2px;}
+  label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;
+        color:var(--osd);margin:14px 0 6px;text-transform:uppercase;}
+  input[type=text], textarea{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    font-family:'Archivo',sans-serif;font-size:14px;padding:11px 13px;outline:none;
+  }
+  textarea{min-height:70px;resize:vertical;}
+  input:focus, textarea:focus{border-color:var(--accent);}
+  .row{display:grid;gap:12px;}
+  .row.c2{grid-template-columns:1fr 1fr;}
+  .row.c3{grid-template-columns:2fr 1fr 1fr;}
+  @media (max-width:700px){.row.c2,.row.c3{grid-template-columns:1fr;}}
+  .item{border:1px solid var(--line);padding:16px;margin-top:12px;position:relative;background:rgba(10,13,18,.5);}
+  .item .del{
+    position:absolute;top:10px;right:10px;background:none;border:1px solid var(--line);color:var(--osd);
+    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;padding:5px 10px;cursor:pointer;
+  }
+  .item .del:hover{border-color:var(--accent);color:var(--accent);}
+  button.add{
+    margin-top:14px;background:none;border:1px dashed var(--line);color:var(--osd);width:100%;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;padding:12px;cursor:pointer;
+  }
+  button.add:hover{border-color:var(--accent);color:var(--accent);}
+  .bar{
+    position:fixed;bottom:0;left:0;right:0;background:rgba(10,13,18,.92);border-top:1px solid var(--line);
+    backdrop-filter:blur(10px);padding:16px 5vw;display:flex;gap:14px;flex-wrap:wrap;align-items:center;z-index:10;
+  }
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;padding:14px 24px;cursor:pointer;border:none;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;font-weight:500;
+  }
+  .btn.primary{background:var(--accent);color:var(--bg);}
+  .btn.primary:hover{box-shadow:0 4px 20px rgba(255,90,31,.4);}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--ink);}
+  .btn.ghost:hover{border-color:var(--accent);}
+  #status{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--osd);margin-left:auto;}
+  .hint{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--osd);line-height:1.8;margin-top:8px;}
+  .hint b{color:var(--accent);font-weight:500;}
+  input[type=file]{display:none;}
+</style>
+</head>
+<body>
+
+<h1>Content Manager</h1>
+<p class="sub">Edit everything on the HUNTER FPV site here. When you're done, hit
+<strong>Download content.json</strong>, replace the <strong>content.json</strong> file in your site folder
+(or GitHub repo) with the downloaded one, and push. The live site updates on the next load.</p>
+<p class="hint"><b>VIDEOS:</b> each scene accepts a full URL or a relative path like <b>video/skate.mp4</b>.
+For a permanent site, put the MP4 files in the /video folder of the repo and use relative paths —
+Runway links expire after ~a day.</p>
+
+<div class="osd">Pilot / Hero</div>
+<fieldset>
+  <div class="row c2">
+    <div><label>Pilot name (big title)</label><input type="text" id="f_name"></div>
+    <div><label>Tagline (outlined subtitle)</label><input type="text" id="f_tagline"></div>
+  </div>
+  <div class="row c2">
+    <div><label>Callsign line</label><input type="text" id="f_callsign"></div>
+    <div><label>Scroll cue text</label><input type="text" id="f_cue"></div>
+  </div>
+  <label>Roles (shown under the name)</label>
+  <div id="list_roles"></div>
+  <button class="add" onclick="addRole()">+ ADD ROLE</button>
+</fieldset>
+
+<div class="osd">Scene Videos (scroll-scrubbed)</div>
+<fieldset id="list_videos"></fieldset>
+
+<div class="osd">Demo Reel section</div>
+<fieldset>
+  <div class="row c2">
+    <div><label>Section label (OSD line)</label><input type="text" id="f_reelLabel"></div>
+    <div><label>Section title</label><input type="text" id="f_reelTitle"></div>
+  </div>
+  <label>Intro text</label><textarea id="f_reelIntro"></textarea>
+  <label>Reel cards</label>
+  <div id="list_reel"></div>
+  <button class="add" onclick="addReel()">+ ADD REEL CARD</button>
+</fieldset>
+
+<div class="osd">Latest Work section</div>
+<fieldset>
+  <div class="row c2">
+    <div><label>Section label</label><input type="text" id="f_workLabel"></div>
+    <div><label>Section title</label><input type="text" id="f_workTitle"></div>
+  </div>
+  <label>Projects</label>
+  <div id="list_work"></div>
+  <button class="add" onclick="addWork()">+ ADD PROJECT</button>
+</fieldset>
+
+<div class="osd">Equipment section</div>
+<fieldset>
+  <div class="row c2">
+    <div><label>Section label</label><input type="text" id="f_equipLabel"></div>
+    <div><label>Section title</label><input type="text" id="f_equipTitle"></div>
+  </div>
+  <label>Rigs</label>
+  <div id="list_rigs"></div>
+  <button class="add" onclick="addRig()">+ ADD RIG</button>
+</fieldset>
+
+<div class="osd">Contact section</div>
+<fieldset>
+  <div class="row c2">
+    <div><label>Section label</label><input type="text" id="f_contactLabel"></div>
+    <div><label>Section title (can include &lt;br&gt;)</label><input type="text" id="f_contactTitle"></div>
+  </div>
+  <label>Blurb</label><textarea id="f_contactBlurb"></textarea>
+  <div class="row c2">
+    <div><label>Button text</label><input type="text" id="f_ctaText"></div>
+    <div><label>Email</label><input type="text" id="f_email"></div>
+  </div>
+  <div class="row c2">
+    <div><label>Instagram label</label><input type="text" id="f_igLabel"></div>
+    <div><label>Instagram URL</label><input type="text" id="f_igUrl"></div>
+  </div>
+  <div class="row c2">
+    <div><label>YouTube label</label><input type="text" id="f_ytLabel"></div>
+    <div><label>YouTube URL</label><input type="text" id="f_ytUrl"></div>
+  </div>
+</fieldset>
+
+<div class="osd">Footer</div>
+<fieldset>
+  <div class="row c3">
+    <div><label>Left</label><input type="text" id="f_foot0"></div>
+    <div><label>Center</label><input type="text" id="f_foot1"></div>
+    <div><label>Right</label><input type="text" id="f_foot2"></div>
+  </div>
+</fieldset>
+
+<div class="bar">
+  <button class="btn primary" onclick="downloadJSON()">⬇ DOWNLOAD CONTENT.JSON</button>
+  <button class="btn ghost" onclick="document.getElementById('importFile').click()">IMPORT CONTENT.JSON</button>
+  <input type="file" id="importFile" accept=".json" onchange="importJSON(event)">
+  <button class="btn ghost" onclick="location.href='index.html'">VIEW SITE →</button>
+  <span id="status">READY</span>
+</div>
+
+<script>
+let C = null;
+const $ = id => document.getElementById(id);
+const status = msg => { $('status').textContent = msg; };
+
+const BLANK = {
+  pilot:{name:"",tagline:"",callsign:"",roles:[],scrollCue:""},
+  sections:{reel:{label:"",title:"",intro:""},work:{label:"",title:""},
+            equipment:{label:"",title:""},
+            contact:{label:"",title:"",blurb:"",ctaText:"",email:"",
+                     instagram:{label:"",url:""},youtube:{label:"",url:""}}},
+  reelClips:[],workRows:[],rigs:[],
+  videos:[{name:"",src:""},{name:"",src:""},{name:"",src:""},{name:"",src:""}],
+  footer:["","",""]
+};
+
+async function boot(){
+  try {
+    const r = await fetch('content.json', {cache:'no-store'});
+    if (r.ok) { C = await r.json(); status('LOADED content.json'); }
+  } catch(e){}
+  if (!C){ C = BLANK; status('COULD NOT LOAD content.json — click IMPORT and pick the file, or start fresh'); }
+  fill();
+}
+
+function fill(){
+  $('f_name').value = C.pilot.name; $('f_tagline').value = C.pilot.tagline;
+  $('f_callsign').value = C.pilot.callsign; $('f_cue').value = C.pilot.scrollCue;
+  renderRoles(); renderVideos(); renderReel(); renderWork(); renderRigs();
+  $('f_reelLabel').value = C.sections.reel.label; $('f_reelTitle').value = C.sections.reel.title;
+  $('f_reelIntro').value = C.sections.reel.intro;
+  $('f_workLabel').value = C.sections.work.label; $('f_workTitle').value = C.sections.work.title;
+  $('f_equipLabel').value = C.sections.equipment.label; $('f_equipTitle').value = C.sections.equipment.title;
+  const ct = C.sections.contact;
+  $('f_contactLabel').value = ct.label; $('f_contactTitle').value = ct.title;
+  $('f_contactBlurb').value = ct.blurb; $('f_ctaText').value = ct.ctaText; $('f_email').value = ct.email;
+  $('f_igLabel').value = ct.instagram.label; $('f_igUrl').value = ct.instagram.url;
+  $('f_ytLabel').value = ct.youtube.label; $('f_ytUrl').value = ct.youtube.url;
+  $('f_foot0').value = C.footer[0]||''; $('f_foot1').value = C.footer[1]||''; $('f_foot2').value = C.footer[2]||'';
+}
+
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+function renderRoles(){
+  $('list_roles').innerHTML = C.pilot.roles.map((r,i) =>
+    `<div class="item"><button class="del" onclick="C.pilot.roles.splice(${i},1);renderRoles()">REMOVE</button>
+     <label>Role ${i+1}</label><input type="text" value="${esc(r)}" oninput="C.pilot.roles[${i}]=this.value"></div>`).join('');
+}
+function addRole(){ C.pilot.roles.push(''); renderRoles(); }
+
+function renderVideos(){
+  $('list_videos').innerHTML = C.videos.map((v,i) =>
+    `<div class="item"><label>Scene ${i+1} name (shown in the HUD)</label>
+     <input type="text" value="${esc(v.name)}" oninput="C.videos[${i}].name=this.value">
+     <label>Scene ${i+1} video URL or relative path</label>
+     <input type="text" value="${esc(v.src)}" oninput="C.videos[${i}].src=this.value"></div>`).join('');
+}
+
+function renderReel(){
+  $('list_reel').innerHTML = C.reelClips.map((k,i) =>
+    `<div class="item"><button class="del" onclick="C.reelClips.splice(${i},1);renderReel()">REMOVE</button>
+     <label>Card ${i+1} label</label><input type="text" value="${esc(k.tag)}" oninput="C.reelClips[${i}].tag=this.value"></div>`).join('');
+}
+function addReel(){ C.reelClips.push({tag:''}); renderReel(); }
+
+function renderWork(){
+  $('list_work').innerHTML = C.workRows.map((w,i) =>
+    `<div class="item"><button class="del" onclick="C.workRows.splice(${i},1);renderWork()">REMOVE</button>
+     <div class="row c3">
+       <div><label>Title</label><input type="text" value="${esc(w.title)}" oninput="C.workRows[${i}].title=this.value"></div>
+       <div><label>Type</label><input type="text" value="${esc(w.kind)}" oninput="C.workRows[${i}].kind=this.value"></div>
+       <div><label>Year</label><input type="text" value="${esc(w.year)}" oninput="C.workRows[${i}].year=this.value"></div>
+     </div></div>`).join('');
+}
+function addWork(){ C.workRows.push({title:'',kind:'',year:''}); renderWork(); }
+
+function renderRigs(){
+  $('list_rigs').innerHTML = C.rigs.map((r,i) =>
+    `<div class="item"><button class="del" onclick="C.rigs.splice(${i},1);renderRigs()">REMOVE</button>
+     <div class="row c2">
+       <div><label>Rig name</label><input type="text" value="${esc(r.name)}" oninput="C.rigs[${i}].name=this.value"></div>
+       <div><label>Role line</label><input type="text" value="${esc(r.role)}" oninput="C.rigs[${i}].role=this.value"></div>
+     </div>
+     <label>Description</label><textarea oninput="C.rigs[${i}].desc=this.value">${esc(r.desc)}</textarea></div>`).join('');
+}
+function addRig(){ C.rigs.push({name:'',role:'',desc:''}); renderRigs(); }
+
+function collect(){
+  C.pilot.name = $('f_name').value; C.pilot.tagline = $('f_tagline').value;
+  C.pilot.callsign = $('f_callsign').value; C.pilot.scrollCue = $('f_cue').value;
+  C.sections.reel.label = $('f_reelLabel').value; C.sections.reel.title = $('f_reelTitle').value;
+  C.sections.reel.intro = $('f_reelIntro').value;
+  C.sections.work.label = $('f_workLabel').value; C.sections.work.title = $('f_workTitle').value;
+  C.sections.equipment.label = $('f_equipLabel').value; C.sections.equipment.title = $('f_equipTitle').value;
+  const ct = C.sections.contact;
+  ct.label = $('f_contactLabel').value; ct.title = $('f_contactTitle').value;
+  ct.blurb = $('f_contactBlurb').value; ct.ctaText = $('f_ctaText').value; ct.email = $('f_email').value;
+  ct.instagram.label = $('f_igLabel').value; ct.instagram.url = $('f_igUrl').value;
+  ct.youtube.label = $('f_ytLabel').value; ct.youtube.url = $('f_ytUrl').value;
+  C.footer = [$('f_foot0').value, $('f_foot1').value, $('f_foot2').value];
+}
+
+function downloadJSON(){
+  collect();
+  const blob = new Blob([JSON.stringify(C, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'content.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  status('DOWNLOADED — replace content.json in your repo and push');
+}
+
+function importJSON(ev){
+  const f = ev.target.files[0];
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try { C = JSON.parse(rd.result); fill(); status('IMPORTED ' + f.name); }
+    catch(e){ status('IMPORT FAILED — not valid JSON'); }
+  };
+  rd.readAsText(f);
+}
+
+boot();
+</script>
+</body>
+</html>
