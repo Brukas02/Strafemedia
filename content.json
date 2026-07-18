@@ -12,8 +12,8 @@
   },
   "sections": {
     "reel": {
-      "label": "SCENE 01 // DOWNHILL SKATE — DEMO REEL",
-      "title": "The reel",
+      "label": "SCENE 01 // Video Archive",
+      "title": "THE WORK",
       "intro": "Four disciplines, one pilot. Every shot flown manual, no GPS, no gimbal babysitting."
     },
     "work": {
@@ -42,7 +42,7 @@
   },
   "reelClips": [
     {
-      "tag": "FULL REEL — 2026"
+      "tag": "FLIGHT REEL — 2026"
     },
     {
       "tag": "XGames/Sports"
