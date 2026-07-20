@@ -231,7 +231,7 @@
 </head>
 <body>
 
-<!-- z1: the FPV feed — four sports, scroll-scrubbed -->
+<!-- z1: the FPV feed — four sports -->
 <div id="feed" aria-hidden="true">
   <video muted playsinline preload="none" data-scene="0"></video>
   <video muted playsinline preload="none" data-scene="1"></video>
@@ -354,16 +354,19 @@
 window.__startApp = () => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ============ SCROLL-SCRUBBED FPV FEED ============
-  // Scroll position IS the playhead. Paste clip URLs below
-  // (Cloudinary for production — Runway URLs expire).
-  // Re-encode for buttery scrubbing:
-  //   ffmpeg -i in.mp4 -c:v libx264 -g 1 -crf 20 -pix_fmt yuv420p -movflags +faststart out.mp4
+  // ============ FPV FEED ============
+  // Desktop: scroll position IS the playhead (true scroll-scrub).
+  // Mobile: iOS/Android block seeking an unplayed video and skip preload,
+  //   so phones instead PLAY each scene's clip muted+looped when it's active.
+  // Paste clip URLs in content.json (Cloudinary for production — Runway expires).
   const FEED_URLS = (window.SITE_CONTENT?.videos || []).map(v => v.src || "");
   const SCENE_NAMES = (window.SITE_CONTENT?.videos || []).map(v => v.name || "SCENE");
-  // scroll zones: intro owns 0–.14, then four sport scenes
+  // scroll zones: intro owns 0–.17, then four sport scenes
   const ZONES = [.17, .40, .60, .79, 1.0];
   const XF = .025;   // crossfade half-width
+
+  // detect phones / touch screens
+  const IS_MOBILE = matchMedia('(max-width:820px), (pointer:coarse)').matches;
 
   const vids = [...document.querySelectorAll('#feed video')];
   const durs = vids.map(() => 10);
@@ -371,6 +374,7 @@ window.__startApp = () => {
     if (!FEED_URLS[i]) return;
     v.preload = 'auto';
     v.src = FEED_URLS[i];
+    if (IS_MOBILE) { v.loop = true; v.muted = true; v.setAttribute('muted',''); }
     v.addEventListener('loadedmetadata', () => { durs[i] = v.duration || 10; }, {once:true});
     v.addEventListener('error', () => {
       const f = document.getElementById('hudFeed');
@@ -552,7 +556,7 @@ window.__startApp = () => {
     fx.style.opacity = (burst * .95).toFixed(3);
     fxLabel.style.opacity = (tri(p, INTRO_END, INTRO_END + .02, INTRO_END + .06)).toFixed(3);
 
-    // ----- ACT 2: FPV feed, scroll-scrubbed -----
+    // ----- ACT 2: FPV feed -----
     const feedGate = sstep((p - (INTRO_END - .01)) / .04);
     let act = -1;
     for (let i = 0; i < vids.length; i++){
@@ -564,7 +568,13 @@ window.__startApp = () => {
       const alpha = Math.min(fadeIn, fadeOut) * feedGate;
       v.style.opacity = Math.max(0, alpha).toFixed(3);
       if (alpha > .5) act = i;
-      if (alpha > 0 && v.readyState >= 2){
+
+      if (IS_MOBILE){
+        // phones: play the active scene, pause the rest (no scrubbing)
+        if (alpha > 0.15){ if (v.paused) v.play().catch(()=>{}); }
+        else if (!v.paused){ v.pause(); }
+      } else if (alpha > 0 && v.readyState >= 2){
+        // desktop: true scroll-scrub
         const lo = i === 0 ? a : a - XF;
         const hi = i === vids.length-1 ? b : b + XF;
         const local = Math.min(1, Math.max(0, (p - lo) / (hi - lo)));
@@ -589,6 +599,22 @@ window.__startApp = () => {
   }
   addEventListener('resize', resize);
   resize();
+
+  // Mobile: unlock video playback on the first tap/scroll so each scene
+  // can autoplay when it becomes active (iOS blocks play() until a gesture).
+  if (IS_MOBILE){
+    const prime = () => {
+      vids.forEach(v => {
+        if (!v.src) return;
+        v.play().then(() => v.pause()).catch(()=>{});
+      });
+      removeEventListener('touchstart', prime);
+      removeEventListener('scroll', prime);
+    };
+    addEventListener('touchstart', prime, {once:true, passive:true});
+    addEventListener('scroll', prime, {once:true, passive:true});
+  }
+
   tick();
 };
 </script>
