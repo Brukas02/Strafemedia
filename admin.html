@@ -223,9 +223,11 @@ function renderReel(){
      <input type="text" value="${esc(k.video||'')}" placeholder="https://res.cloudinary.com/.../reel.mp4" oninput="C.reelClips[${i}].video=this.value">
      <label>YouTube URL (used only if no Cloudinary URL above)</label>
      <input type="text" value="${esc(k.youtube||'')}" placeholder="https://youtu.be/..." oninput="C.reelClips[${i}].youtube=this.value">
-     <div class="hint">Leave both blank = card is a static placeholder. Cloudinary wins if both are filled.</div></div>`).join('');
+     <label>Thumbnail image URL (optional — auto-made from the video if blank)</label>
+     <input type="text" value="${esc(k.thumb||'')}" placeholder="leave blank to auto-generate" oninput="C.reelClips[${i}].thumb=this.value">
+     <div class="hint">Card shows this thumbnail, then plays on click. Leave both video fields blank = static placeholder. Cloudinary wins if both filled.</div></div>`).join('');
 }
-function addReel(){ C.reelClips.push({tag:'',video:'',youtube:''}); renderReel(); }
+function addReel(){ C.reelClips.push({tag:'',video:'',youtube:'',thumb:''}); renderReel(); }
 
 function renderWork(){
   $('list_work').innerHTML = C.workRows.map((w,i) =>
