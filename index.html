@@ -223,6 +223,27 @@
     background:var(--bg);
   }
 
+  .clip.playable{cursor:pointer;}
+  .clip.playable:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+
+  /* reel lightbox */
+  #lightbox{
+    position:fixed;inset:0;z-index:60;display:none;
+    background:rgba(6,8,11,.93);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    align-items:center;justify-content:center;padding:5vh 5vw;
+  }
+  #lightbox.open{display:flex;}
+  .lb-frame{width:100%;max-width:1200px;}
+  #lbInner{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--line);}
+  #lbInner video,#lbInner iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;}
+  .lb-cap{margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.2em;color:var(--osd);text-transform:uppercase;}
+  #lbClose{
+    position:fixed;top:24px;right:26px;z-index:61;cursor:pointer;
+    background:none;border:1px solid var(--line);color:var(--ink);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;padding:10px 16px;
+  }
+  #lbClose:hover{border-color:var(--accent);color:var(--accent);}
+
   @media (prefers-reduced-motion: reduce){
     .scroll-cue::after{animation:none;}
     .cta:hover,.clip:hover .play{transform:none;}
@@ -242,6 +263,15 @@
 
 <!-- z3: the 3D drone (intro act) -->
 <canvas id="scene"></canvas>
+
+<!-- reel lightbox player -->
+<div id="lightbox" aria-hidden="true">
+  <button id="lbClose" aria-label="Close">✕ CLOSE</button>
+  <div class="lb-frame">
+    <div id="lbInner"></div>
+    <div class="lb-cap" id="lbCap"></div>
+  </div>
+</div>
 
 <!-- z4: goggle-link transition -->
 <div id="fx" aria-hidden="true"></div>
@@ -374,7 +404,7 @@ window.__startApp = () => {
     if (!FEED_URLS[i]) return;
     v.preload = 'auto';
     v.src = FEED_URLS[i];
-    if (IS_MOBILE) { v.loop = true; v.muted = true; v.setAttribute('muted',''); }
+    v.muted = true; v.setAttribute('muted','');   // muted lets mobile decode without a gesture
     v.addEventListener('loadedmetadata', () => { durs[i] = v.duration || 10; }, {once:true});
     v.addEventListener('error', () => {
       const f = document.getElementById('hudFeed');
@@ -569,17 +599,24 @@ window.__startApp = () => {
       v.style.opacity = Math.max(0, alpha).toFixed(3);
       if (alpha > .5) act = i;
 
-      if (IS_MOBILE){
-        // phones: play the active scene, pause the rest (no scrubbing)
-        if (alpha > 0.15){ if (v.paused) v.play().catch(()=>{}); }
-        else if (!v.paused){ v.pause(); }
-      } else if (alpha > 0 && v.readyState >= 2){
-        // desktop: true scroll-scrub
+      if (alpha > 0 && v.readyState >= 1){
+        // true scroll-scrub on all devices. On mobile we guard against
+        // firing a new seek while one is still in progress (Apple's
+        // recommended approach) so iOS doesn't cancel/choke on rapid seeks.
         const lo = i === 0 ? a : a - XF;
         const hi = i === vids.length-1 ? b : b + XF;
         const local = Math.min(1, Math.max(0, (p - lo) / (hi - lo)));
         const want = local * Math.max(.05, durs[i] - .12);
-        if (Math.abs(v.currentTime - want) > .034) v.currentTime = want;
+        if (IS_MOBILE){
+          if (!v._seeking && Math.abs(v.currentTime - want) > .05){
+            v._seeking = true;
+            const done = () => { v._seeking = false; v.removeEventListener('seeked', done); };
+            v.addEventListener('seeked', done);
+            try { v.currentTime = want; } catch(_){ v._seeking = false; }
+          }
+        } else {
+          if (Math.abs(v.currentTime - want) > .034) v.currentTime = want;
+        }
       }
     }
 
@@ -603,16 +640,18 @@ window.__startApp = () => {
   // Mobile: unlock video playback on the first tap/scroll so each scene
   // can autoplay when it becomes active (iOS blocks play() until a gesture).
   if (IS_MOBILE){
+    // iOS needs one play()+pause() per video before it will paint seeked
+    // frames. Do it silently on the first user gesture, then scrubbing works.
     const prime = () => {
       vids.forEach(v => {
         if (!v.src) return;
-        v.play().then(() => v.pause()).catch(()=>{});
+        v.play().then(() => { v.pause(); v.currentTime = 0.01; }).catch(()=>{});
       });
       removeEventListener('touchstart', prime);
-      removeEventListener('scroll', prime);
+      removeEventListener('pointerdown', prime);
     };
     addEventListener('touchstart', prime, {once:true, passive:true});
-    addEventListener('scroll', prime, {once:true, passive:true});
+    addEventListener('pointerdown', prime, {once:true, passive:true});
   }
 
   tick();
@@ -623,7 +662,7 @@ window.__startApp = () => {
 // All editable content lives in content.json (edit it with admin.html).
 // Embedded defaults below keep the site working when content.json
 // can't be fetched (e.g. opening index.html directly from disk).
-const DEFAULT_CONTENT = {"pilot": {"name": "HUNTER", "tagline": "FPV OPERATOR", "callsign": "PILOT // CALLSIGN HNTR-1", "roles": ["EXTREME SPORTS CHASE", "CINEMATIC FPV", "BROADCAST READY"], "scrollCue": "SCROLL TO LAUNCH"}, "sections": {"reel": {"label": "SCENE 01 // DOWNHILL SKATE — DEMO REEL", "title": "The reel", "intro": "Four disciplines, one pilot. Every shot flown manual, no GPS, no gimbal babysitting."}, "work": {"label": "SCENE 02 // MOTOCROSS — LATEST WORK", "title": "Latest work"}, "equipment": {"label": "SCENE 03 // SURF — EQUIPMENT", "title": "The fleet"}, "contact": {"label": "SCENE 04 // RALLY — CONTACT", "title": "Put a drone<br>on your shot list", "blurb": "Booking chase coverage, commercial shoots, and live-event FPV worldwide. FAA Part 107, fully insured.", "ctaText": "REQUEST A FLIGHT →", "email": "fly@hunterfpv.com", "instagram": {"label": "@hunter.fpv", "url": "#"}, "youtube": {"label": "HUNTER FPV", "url": "#"}}}, "reelClips": [{"tag": "FULL REEL — 2026"}, {"tag": "FREESTYLE CUT"}, {"tag": "ATHLETE CHASE CUT"}, {"tag": "ONE-TAKE SELECTS"}], "workRows": [{"title": "Supercross Opener", "kind": "BROADCAST", "year": "2026"}, {"title": "Pacific Lines", "kind": "SURF FILM", "year": "2026"}, {"title": "Gravel Stage", "kind": "RALLY DOC", "year": "2025"}, {"title": "Hairpin — Downhill Series", "kind": "SOCIAL CAMPAIGN", "year": "2025"}, {"title": "Rooftop Sessions", "kind": "FREESTYLE", "year": "2025"}], "rigs": [{"name": "5\" Freestyle", "role": "THE DAILY DRIVER", "desc": "120+ mph chase platform. 6S power, full manual rates, stabilized HD onboard. This is what threads the gap behind a skateboard at speed."}, {"name": "Cinewhoop", "role": "CLOSE-PROXIMITY / TALENT-SAFE", "desc": "Ducted and slow-flying. Flies inches from athletes and through interiors where an open prop can't go. One-take factory tours live here."}, {"name": "Cinelifter X8", "role": "HEAVY LIFT / CINEMA GLASS", "desc": "Carries full cinema cameras. ProRes RAW acquisition with FPV energy — broadcast and commercial pipelines without compromise."}, {"name": "Ground Station", "role": "HD LINK / DUAL OPERATOR", "desc": "Digital HD video link, long-range control. Director's monitor feed on set, dual-operator option for camera moves inside the flight."}], "videos": [{"name": "SKATE CHASE", "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230315-jqkj6/FPV_drone_camera_POV_chasing_a_downhill_skateboarder_carving_at_high_speed_down_a_winding_mountain_r.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNDg2MzcxZGNmYjcwZGMwOSIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDM3MTE2NH0.uN8sBPfBXY9JPdbPk5EfvXMMUbgwgf_c2MBd3sPsEKY"}, {"name": "MOTO CHASE", "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260703015123-664jc/FPV_drone_camera_POV_in_a_smooth_high_crane_descent_following_a_motocross_rider_whipping_over_a_larg.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiOWZlOTdmYjQ1ZjEzZWZjNiIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDQwNjMyNH0.XVq0Vce4ilJE7TA4sRQEJIvxtXmiFoKcXUTBu5JiKss"}, {"name": "SURF CHASE", "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230323-fhkg2/FPV_drone_camera_POV_skimming_low_over_ocean_water_chasing_a_surfer_carving_down_the_face_of_a_large.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYWExZDg5Yjk4YjZkZDgwZCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDM0NDEyMX0.GkGryCpQZKzCzgwkHnO8O2MOV2LQeKWxXyPYyt3z_ew"}, {"name": "RALLY CHASE", "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230331-tj49n/FPV_drone_camera_POV_chasing_a_rally_car_sliding_sideways_through_a_gravel_forest_stage__dust_and_gr.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYzcwNjg3ZTk3YTMyZTRkOCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDMyNTk5M30.Hex6ckyQJ7CI9EbQoUa5OCY7-Ta9npKSBonkbSSqVRs"}], "footer": ["© 2026 HUNTER FPV", "FAA PART 107 · FULLY INSURED", "BATTERY AT 0% — THANKS FOR FLYING"]};
+const DEFAULT_CONTENT = {"pilot": {"name": "HUNTER", "tagline": "FPV OPERATOR", "callsign": "PILOT // CALLSIGN HNTR-1", "roles": ["EXTREME SPORTS CHASE", "CINEMATIC FPV", "BROADCAST READY"], "scrollCue": "SCROLL TO LAUNCH"}, "sections": {"reel": {"label": "SCENE 01 // DOWNHILL SKATE — DEMO REEL", "title": "The reel", "intro": "Four disciplines, one pilot. Every shot flown manual, no GPS, no gimbal babysitting."}, "work": {"label": "SCENE 02 // MOTOCROSS — LATEST WORK", "title": "Latest work"}, "equipment": {"label": "SCENE 03 // SURF — EQUIPMENT", "title": "The fleet"}, "contact": {"label": "SCENE 04 // RALLY — CONTACT", "title": "Put a drone<br>on your shot list", "blurb": "Booking chase coverage, commercial shoots, and live-event FPV worldwide. FAA Part 107, fully insured.", "ctaText": "REQUEST A FLIGHT →", "email": "fly@hunterfpv.com", "instagram": {"label": "@hunter.fpv", "url": "#"}, "youtube": {"label": "HUNTER FPV", "url": "#"}}}, "reelClips": [{"tag": "FULL REEL — 2026", "video": "", "youtube": ""}, {"tag": "FREESTYLE CUT", "video": "", "youtube": ""}, {"tag": "ATHLETE CHASE CUT", "video": "", "youtube": ""}, {"tag": "ONE-TAKE SELECTS", "video": "", "youtube": ""}], "workRows": [{"title": "Supercross Opener", "kind": "BROADCAST", "year": "2026"}, {"title": "Pacific Lines", "kind": "SURF FILM", "year": "2026"}, {"title": "Gravel Stage", "kind": "RALLY DOC", "year": "2025"}, {"title": "Hairpin — Downhill Series", "kind": "SOCIAL CAMPAIGN", "year": "2025"}, {"title": "Rooftop Sessions", "kind": "FREESTYLE", "year": "2025"}], "rigs": [{"name": "5\" Freestyle", "role": "THE DAILY DRIVER", "desc": "120+ mph chase platform. 6S power, full manual rates, stabilized HD onboard. This is what threads the gap behind a skateboard at speed."}, {"name": "Cinewhoop", "role": "CLOSE-PROXIMITY / TALENT-SAFE", "desc": "Ducted and slow-flying. Flies inches from athletes and through interiors where an open prop can't go. One-take factory tours live here."}, {"name": "Cinelifter X8", "role": "HEAVY LIFT / CINEMA GLASS", "desc": "Carries full cinema cameras. ProRes RAW acquisition with FPV energy — broadcast and commercial pipelines without compromise."}, {"name": "Ground Station", "role": "HD LINK / DUAL OPERATOR", "desc": "Digital HD video link, long-range control. Director's monitor feed on set, dual-operator option for camera moves inside the flight."}], "videos": [{"name": "SKATE CHASE", "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230315-jqkj6/FPV_drone_camera_POV_chasing_a_downhill_skateboarder_carving_at_high_speed_down_a_winding_mountain_r.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNDg2MzcxZGNmYjcwZGMwOSIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDM3MTE2NH0.uN8sBPfBXY9JPdbPk5EfvXMMUbgwgf_c2MBd3sPsEKY"}, {"name": "MOTO CHASE", "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260703015123-664jc/FPV_drone_camera_POV_in_a_smooth_high_crane_descent_following_a_motocross_rider_whipping_over_a_larg.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiOWZlOTdmYjQ1ZjEzZWZjNiIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDQwNjMyNH0.XVq0Vce4ilJE7TA4sRQEJIvxtXmiFoKcXUTBu5JiKss"}, {"name": "SURF CHASE", "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230323-fhkg2/FPV_drone_camera_POV_skimming_low_over_ocean_water_chasing_a_surfer_carving_down_the_face_of_a_large.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYWExZDg5Yjk4YjZkZDgwZCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDM0NDEyMX0.GkGryCpQZKzCzgwkHnO8O2MOV2LQeKWxXyPYyt3z_ew"}, {"name": "RALLY CHASE", "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230331-tj49n/FPV_drone_camera_POV_chasing_a_rally_car_sliding_sideways_through_a_gravel_forest_stage__dust_and_gr.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYzcwNjg3ZTk3YTMyZTRkOCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDMyNTk5M30.Hex6ckyQJ7CI9EbQoUa5OCY7-Ta9npKSBonkbSSqVRs"}], "footer": ["© 2026 HUNTER FPV", "FAA PART 107 · FULLY INSURED", "BATTERY AT 0% — THANKS FOR FLYING"]};
 
 (async () => {
   let c = DEFAULT_CONTENT;
@@ -637,6 +676,35 @@ const DEFAULT_CONTENT = {"pilot": {"name": "HUNTER", "tagline": "FPV OPERATOR", 
   const $ = id => document.getElementById(id);
   const set = (id, fn) => { const el = $(id); if (el) fn(el); };
 
+  // ----- reel lightbox (Cloudinary video, or YouTube embed) -----
+  const lb = $('lightbox'), lbInner = $('lbInner'), lbCap = $('lbCap');
+  window.openReel = (i) => {
+    const k = (window.SITE_CONTENT.reelClips||[])[i];
+    if (!k) return;
+    let html = '';
+    if (k.video && k.video.trim()){
+      html = '<video src="' + esc(k.video) + '" controls autoplay playsinline></video>';
+    } else {
+      const id = ytId(k.youtube);
+      if (!id) return;
+      html = '<iframe src="https://www.youtube.com/embed/' + esc(id) + '?autoplay=1&rel=0&playsinline=1" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+    }
+    lbInner.innerHTML = html;
+    lbCap.textContent = k.tag || '';
+    lb.classList.add('open');
+    lb.setAttribute('aria-hidden','false');
+    document.body.style.overflow = 'hidden';
+  };
+  function closeReel(){
+    lbInner.innerHTML = '';          // stops playback
+    lb.classList.remove('open');
+    lb.setAttribute('aria-hidden','true');
+    document.body.style.overflow = '';
+  }
+  $('lbClose').addEventListener('click', closeReel);
+  lb.addEventListener('click', e => { if (e.target === lb) closeReel(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && lb.classList.contains('open')) closeReel(); });
+
   set('cH1', el => el.innerHTML = esc(c.pilot.name) + '<br><span class="ghost">' + esc(c.pilot.tagline) + '</span>');
   set('cCallsign', el => el.textContent = c.pilot.callsign);
   set('cRoles', el => el.innerHTML = (c.pilot.roles||[]).map(r => '<span><i></i>' + esc(r) + '</span>').join(''));
@@ -646,8 +714,20 @@ const DEFAULT_CONTENT = {"pilot": {"name": "HUNTER", "tagline": "FPV OPERATOR", 
   set('cLabelReel', el => el.textContent = c.sections.reel.label);
   set('cReelTitle', el => el.textContent = c.sections.reel.title);
   set('cReelIntro', el => el.textContent = c.sections.reel.intro);
-  set('cReel', el => el.innerHTML = (c.reelClips||[]).map(k =>
-    '<div class="clip"><span class="rec">● REC</span><span class="play"></span><span class="tag">' + esc(k.tag) + '</span></div>').join(''));
+  const ytId = (url) => { if(!url) return ''; const m=String(url).match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/); return m?m[1]:''; };
+  set('cReel', el => {
+    el.innerHTML = (c.reelClips||[]).map((k,i) => {
+      const has = !!((k.video && k.video.trim()) || ytId(k.youtube));
+      return '<div class="clip' + (has?' playable':'') + '"' +
+        (has ? ' data-i="'+i+'" role="button" tabindex="0" aria-label="Play '+esc(k.tag)+'"' : '') +
+        '><span class="rec">● REC</span><span class="play"></span><span class="tag">' + esc(k.tag) + '</span></div>';
+    }).join('');
+    el.querySelectorAll('.clip.playable').forEach(card => {
+      const open = () => openReel(+card.dataset.i);
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
+    });
+  });
 
   set('cLabelWork', el => el.textContent = c.sections.work.label);
   set('cWorkTitle', el => el.textContent = c.sections.work.title);

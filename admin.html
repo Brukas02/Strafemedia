@@ -218,9 +218,14 @@ function renderVideos(){
 function renderReel(){
   $('list_reel').innerHTML = C.reelClips.map((k,i) =>
     `<div class="item"><button class="del" onclick="C.reelClips.splice(${i},1);renderReel()">REMOVE</button>
-     <label>Card ${i+1} label</label><input type="text" value="${esc(k.tag)}" oninput="C.reelClips[${i}].tag=this.value"></div>`).join('');
+     <label>Card ${i+1} label</label><input type="text" value="${esc(k.tag)}" oninput="C.reelClips[${i}].tag=this.value">
+     <label>Cloudinary video URL (plays when the card is clicked)</label>
+     <input type="text" value="${esc(k.video||'')}" placeholder="https://res.cloudinary.com/.../reel.mp4" oninput="C.reelClips[${i}].video=this.value">
+     <label>YouTube URL (used only if no Cloudinary URL above)</label>
+     <input type="text" value="${esc(k.youtube||'')}" placeholder="https://youtu.be/..." oninput="C.reelClips[${i}].youtube=this.value">
+     <div class="hint">Leave both blank = card is a static placeholder. Cloudinary wins if both are filled.</div></div>`).join('');
 }
-function addReel(){ C.reelClips.push({tag:''}); renderReel(); }
+function addReel(){ C.reelClips.push({tag:'',video:'',youtube:''}); renderReel(); }
 
 function renderWork(){
   $('list_work').innerHTML = C.workRows.map((w,i) =>

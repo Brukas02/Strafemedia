@@ -12,12 +12,12 @@
   },
   "sections": {
     "reel": {
-      "label": "SCENE 01 // Video Archive",
-      "title": "THE WORK",
+      "label": "SCENE 01 // DOWNHILL SKATE — DEMO REEL",
+      "title": "The reel",
       "intro": "Four disciplines, one pilot. Every shot flown manual, no GPS, no gimbal babysitting."
     },
     "work": {
-      "label": "SCENE 02 // LATEST WORK",
+      "label": "SCENE 02 // MOTOCROSS — LATEST WORK",
       "title": "Latest work"
     },
     "equipment": {
@@ -42,32 +42,40 @@
   },
   "reelClips": [
     {
-      "tag": "FLIGHT REEL — 2026"
+      "tag": "FULL REEL — 2026",
+      "video": "",
+      "youtube": ""
     },
     {
-      "tag": "XGames/Sports"
+      "tag": "FREESTYLE CUT",
+      "video": "",
+      "youtube": ""
     },
     {
-      "tag": "Vehicle Chase"
+      "tag": "ATHLETE CHASE CUT",
+      "video": "",
+      "youtube": ""
     },
     {
-      "tag": "Fly Throughs"
+      "tag": "ONE-TAKE SELECTS",
+      "video": "",
+      "youtube": ""
     }
   ],
   "workRows": [
     {
-      "title": "WDSC World Downhill Skateboarding Champ",
+      "title": "Supercross Opener",
       "kind": "BROADCAST",
       "year": "2026"
     },
     {
-      "title": "Real Estate / Industrial",
-      "kind": "HOME/BLDG TOUR",
+      "title": "Pacific Lines",
+      "kind": "SURF FILM",
       "year": "2026"
     },
     {
-      "title": "CARS",
-      "kind": "VEHICLE FOLLOW",
+      "title": "Gravel Stage",
+      "kind": "RALLY DOC",
       "year": "2025"
     },
     {
@@ -106,19 +114,19 @@
   "videos": [
     {
       "name": "SKATE CHASE",
-      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784550847/laydownboard_1_1_cjj7bk.mp4"
+      "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230315-jqkj6/FPV_drone_camera_POV_chasing_a_downhill_skateboarder_carving_at_high_speed_down_a_winding_mountain_r.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiNDg2MzcxZGNmYjcwZGMwOSIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDM3MTE2NH0.uN8sBPfBXY9JPdbPk5EfvXMMUbgwgf_c2MBd3sPsEKY"
     },
     {
-      "name": "CAR CHASE",
-      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784588818/GTR_STRAFE_ws0il6.mp4"
+      "name": "MOTO CHASE",
+      "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260703015123-664jc/FPV_drone_camera_POV_in_a_smooth_high_crane_descent_following_a_motocross_rider_whipping_over_a_larg.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiOWZlOTdmYjQ1ZjEzZWZjNiIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDQwNjMyNH0.XVq0Vce4ilJE7TA4sRQEJIvxtXmiFoKcXUTBu5JiKss"
     },
     {
-      "name": "LONGBOARD FINISH LINE",
-      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784588818/FINISH_LINE_LONGBOARD_ofuk1u.mp4"
+      "name": "SURF CHASE",
+      "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230323-fhkg2/FPV_drone_camera_POV_skimming_low_over_ocean_water_chasing_a_surfer_carving_down_the_face_of_a_large.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYWExZDg5Yjk4YjZkZDgwZCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDM0NDEyMX0.GkGryCpQZKzCzgwkHnO8O2MOV2LQeKWxXyPYyt3z_ew"
     },
     {
-      "name": "HAPPY CROWD",
-      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784588818/CROWD_nujfsb.mp4"
+      "name": "RALLY CHASE",
+      "src": "https://dnznrvs05pmza.cloudfront.net/seedance_2/cgt-20260708230331-tj49n/FPV_drone_camera_POV_chasing_a_rally_car_sliding_sideways_through_a_gravel_forest_stage__dust_and_gr.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYzcwNjg3ZTk3YTMyZTRkOCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4NDMyNTk5M30.Hex6ckyQJ7CI9EbQoUa5OCY7-Ta9npKSBonkbSSqVRs"
     }
   ],
   "footer": [
