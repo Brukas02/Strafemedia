@@ -64,23 +64,10 @@
   ],
   "workRows": [
     {
-      "title": "WDSC DOWNHILL TT MOUNTAIN COURSE",
+      "title": "Supercross Opener",
       "kind": "BROADCAST",
       "year": "2026",
-      "media": [
-        {
-          "img": "",
-          "video": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784900405/ON_SET_htdywn.mov",
-          "youtube": "",
-          "caption": ""
-        },
-        {
-          "img": "https://res.cloudinary.com/dr2noik9a/image/upload/v1784900405/BAG_OF_DRONES_d2capi.jpg",
-          "video": "",
-          "youtube": "",
-          "caption": ""
-        }
-      ]
+      "media": []
     },
     {
       "title": "Pacific Lines",
@@ -132,19 +119,19 @@
   "videos": [
     {
       "name": "LONGBOARD CHASE",
-      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784550847/laydownboard_1_1_cjj7bk.mp4"
+      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/ki_0.25,vc_h264/v1784550847/laydownboard_1_1_cjj7bk.mp4"
     },
     {
       "name": "GTR CHASE",
-      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784588818/GTR_STRAFE_ws0il6.mp4"
+      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/ki_0.25,vc_h264/v1784588818/GTR_STRAFE_ws0il6.mp4"
     },
     {
       "name": "SURF CHASE",
-      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784588813/DOWNHILL_SKATE_v2ybgp.mp4"
+      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/ki_0.25,vc_h264/v1784588813/DOWNHILL_SKATE_v2ybgp.mp4"
     },
     {
       "name": "RALLY CHASE",
-      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784588818/CROWD_nujfsb.mp4"
+      "src": "https://res.cloudinary.com/dr2noik9a/video/upload/ki_0.25,vc_h264/v1784588818/CROWD_nujfsb.mp4"
     }
   ],
   "footer": [
