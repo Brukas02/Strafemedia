@@ -66,27 +66,32 @@
     {
       "title": "Supercross Opener",
       "kind": "BROADCAST",
-      "year": "2026"
+      "year": "2026",
+      "media": []
     },
     {
       "title": "Pacific Lines",
       "kind": "SURF FILM",
-      "year": "2026"
+      "year": "2026",
+      "media": []
     },
     {
       "title": "Gravel Stage",
       "kind": "RALLY DOC",
-      "year": "2025"
+      "year": "2025",
+      "media": []
     },
     {
       "title": "Hairpin — Downhill Series",
       "kind": "SOCIAL CAMPAIGN",
-      "year": "2025"
+      "year": "2025",
+      "media": []
     },
     {
       "title": "Rooftop Sessions",
       "kind": "FREESTYLE",
-      "year": "2025"
+      "year": "2025",
+      "media": []
     }
   ],
   "rigs": [

@@ -236,9 +236,37 @@ function renderWork(){
        <div><label>Title</label><input type="text" value="${esc(w.title)}" oninput="C.workRows[${i}].title=this.value"></div>
        <div><label>Type</label><input type="text" value="${esc(w.kind)}" oninput="C.workRows[${i}].kind=this.value"></div>
        <div><label>Year</label><input type="text" value="${esc(w.year)}" oninput="C.workRows[${i}].year=this.value"></div>
-     </div></div>`).join('');
+     </div>
+     <label>Media — stills &amp; videos revealed when this row is expanded</label>
+     <div class="hint">Fill ONE of the three fields per item. Priority: Cloudinary video &rarr; YouTube &rarr; still image.
+       A still image can also be used as the poster frame for a Cloudinary video.</div>
+     <div>${renderWorkMedia(i)}</div>
+     <button class="add" onclick="addWorkMedia(${i})">+ ADD MEDIA TO THIS PROJECT</button>
+     </div>`).join('');
 }
-function addWork(){ C.workRows.push({title:'',kind:'',year:''}); renderWork(); }
+
+function renderWorkMedia(i){
+  const media = C.workRows[i].media || [];
+  if (!media.length) return '';
+  return media.map((m,j) =>
+    `<div class="item">
+       <button class="del" onclick="C.workRows[${i}].media.splice(${j},1);renderWork()">REMOVE</button>
+       <label>Item ${j+1} — still image URL</label>
+       <input type="text" value="${esc(m.img||'')}" placeholder="https://res.cloudinary.com/.../still.jpg" oninput="C.workRows[${i}].media[${j}].img=this.value">
+       <label>Cloudinary video URL</label>
+       <input type="text" value="${esc(m.video||'')}" placeholder="https://res.cloudinary.com/.../clip.mp4" oninput="C.workRows[${i}].media[${j}].video=this.value">
+       <label>YouTube URL</label>
+       <input type="text" value="${esc(m.youtube||'')}" placeholder="https://youtu.be/..." oninput="C.workRows[${i}].media[${j}].youtube=this.value">
+       <label>Caption (optional)</label>
+       <input type="text" value="${esc(m.caption||'')}" oninput="C.workRows[${i}].media[${j}].caption=this.value">
+     </div>`).join('');
+}
+function addWorkMedia(i){
+  if (!C.workRows[i].media) C.workRows[i].media = [];
+  C.workRows[i].media.push({img:'',video:'',youtube:'',caption:''});
+  renderWork();
+}
+function addWork(){ C.workRows.push({title:'',kind:'',year:'',media:[]}); renderWork(); }
 
 function renderRigs(){
   $('list_rigs').innerHTML = C.rigs.map((r,i) =>
