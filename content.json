@@ -17,7 +17,7 @@
       "intro": "Four disciplines, one pilot. Every shot flown manual, no GPS, no gimbal babysitting."
     },
     "work": {
-      "label": "SCENE 02 // MOTOCROSS — LATEST WORK",
+      "label": "2026 WDSC Season Opener",
       "title": "Latest work"
     },
     "equipment": {
@@ -64,10 +64,23 @@
   ],
   "workRows": [
     {
-      "title": "Supercross Opener",
+      "title": "WDSC Opener",
       "kind": "BROADCAST",
       "year": "2026",
-      "media": []
+      "media": [
+        {
+          "img": "https://res.cloudinary.com/dr2noik9a/image/upload/v1784900405/BAG_OF_DRONES_d2capi.jpg",
+          "video": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784900405/ON_SET_htdywn.mov",
+          "youtube": "",
+          "caption": ""
+        },
+        {
+          "img": "",
+          "video": "",
+          "youtube": "",
+          "caption": ""
+        }
+      ]
     },
     {
       "title": "Pacific Lines",
