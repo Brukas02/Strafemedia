@@ -69,16 +69,16 @@
       "year": "2026",
       "media": [
         {
-          "img": "https://res.cloudinary.com/dr2noik9a/image/upload/v1784900405/BAG_OF_DRONES_d2capi.jpg",
+          "img": "",
           "video": "https://res.cloudinary.com/dr2noik9a/video/upload/v1784900405/ON_SET_htdywn.mov",
           "youtube": "",
-          "caption": ""
+          "caption": "TODAYS OFFICE"
         },
         {
-          "img": "",
+          "img": "https://res.cloudinary.com/dr2noik9a/image/upload/v1784900405/BAG_OF_DRONES_d2capi.jpg",
           "video": "",
           "youtube": "",
-          "caption": ""
+          "caption": "BAG OF DRONES"
         }
       ]
     },
