@@ -55,9 +55,46 @@
   .hint{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--osd);line-height:1.8;margin-top:8px;}
   .hint b{color:var(--accent);font-weight:500;}
   input[type=file]{display:none;}
+
+  /* ---------- password gate ---------- */
+  #gate{
+    position:fixed;inset:0;z-index:100;background:var(--bg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;
+  }
+  #gate .box{width:100%;max-width:380px;}
+  #gate h2{font-family:'Anton',sans-serif;font-weight:400;font-size:38px;text-transform:uppercase;margin-bottom:8px;}
+  #gate p{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.15em;color:var(--osd);margin-bottom:24px;}
+  #gate input{
+    width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.1em;padding:14px;outline:none;
+  }
+  #gate input:focus{border-color:var(--accent);}
+  #gate button{
+    width:100%;margin-top:12px;padding:14px;background:var(--accent);color:var(--bg);border:none;cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.2em;font-weight:500;
+  }
+  #gateErr{color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:11px;
+           letter-spacing:.12em;margin-top:12px;min-height:16px;}
+  body.locked{overflow:hidden;}
+  #pwtool{margin-top:12px;}
+  #pwtool code{
+    display:block;background:var(--bg);border:1px solid var(--line);padding:12px;margin-top:8px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);word-break:break-all;
+  }
 </style>
 </head>
-<body>
+<body class="locked">
+
+<div id="gate">
+  <div class="box">
+    <h2>Locked</h2>
+    <p>STRAFE MEDIA — CONTENT MANAGER</p>
+    <input type="password" id="gatePw" placeholder="PASSWORD" autofocus
+           onkeydown="if(event.key==='Enter')tryUnlock()">
+    <button onclick="tryUnlock()">UNLOCK</button>
+    <div id="gateErr"></div>
+  </div>
+</div>
 
 <h1>Content Manager</h1>
 <p class="sub">Edit everything on the HUNTER FPV site here. When you're done, hit
@@ -140,6 +177,19 @@ Runway links expire after ~a day.</p>
   </div>
 </fieldset>
 
+<div class="osd">Admin password</div>
+<fieldset>
+  <p class="hint">Type a new password below, copy the hash it produces, and paste it into
+  <b>admin.html</b> replacing the value of <b>ADMIN_PASSWORD_HASH</b> near the bottom of the file.
+  Then re-upload admin.html.</p>
+  <div id="pwtool">
+    <label>New password</label>
+    <input type="text" id="pwNew" oninput="makeHash()" placeholder="type a new password">
+    <label>Paste this into ADMIN_PASSWORD_HASH</label>
+    <code id="pwHash">—</code>
+  </div>
+</fieldset>
+
 <div class="osd">Footer</div>
 <fieldset>
   <div class="row c3">
@@ -158,6 +208,62 @@ Runway links expire after ~a day.</p>
 </div>
 
 <script>
+// ================== ADMIN GATE ==================
+// Client-side gate: keeps casual visitors and search engines out of the
+// editor. It is NOT real security — someone who reads this file's source
+// could bypass it. Nobody can change the live site through it regardless,
+// since saving means downloading a file and pushing to the repo, which
+// needs your GitHub access. Default password: strafemedia2026
+const ADMIN_PASSWORD_HASH = "7081d3966cf7e27569cd6ec923fce0146819d2934b2d184f1f5f0a933b3c5356";
+
+// compact SHA-256 (no dependency on crypto.subtle, so this also works
+// when admin.html is opened straight from disk over file://)
+function sha256(ascii){
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  const K=[];const H=[];let p=2,i=0;
+  function isP(n){for(let f=2;f*f<=n;f++)if(n%f===0)return false;return true;}
+  for(p=2;i<64;p++){ if(!isP(p))continue;
+    if(i<8)H[i]=(Math.pow(p,.5)%1*4294967296)|0;
+    K[i]=(Math.pow(p,1/3)%1*4294967296)|0; i++; }
+  const msg=unescape(encodeURIComponent(ascii));
+  const words=[];const l=msg.length*8;
+  for(let j=0;j<msg.length;j++) words[j>>2]|=(msg.charCodeAt(j)&255)<<((3-j%4)*8);
+  words[l>>5]|=0x80<<(24-l%32); words[((l+64>>9)<<4)+15]=l;
+  const w=[];const hh=H.slice(0);
+  for(let j=0;j<words.length;j+=16){
+    let a=hh[0],b=hh[1],c=hh[2],d=hh[3],e=hh[4],f=hh[5],g=hh[6],h=hh[7];
+    for(let t=0;t<64;t++){
+      if(t<16) w[t]=words[j+t]|0;
+      else{ const g1=w[t-15],g2=w[t-2];
+        w[t]=(w[t-16]+(rr(g1,7)^rr(g1,18)^(g1>>>3))+w[t-7]+(rr(g2,17)^rr(g2,19)^(g2>>>10)))|0; }
+      const t1=(h+(rr(e,6)^rr(e,11)^rr(e,25))+((e&f)^(~e&g))+K[t]+w[t])|0;
+      const t2=((rr(a,2)^rr(a,13)^rr(a,22))+((a&b)^(a&c)^(b&c)))|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;
+    }
+    hh[0]=(hh[0]+a)|0;hh[1]=(hh[1]+b)|0;hh[2]=(hh[2]+c)|0;hh[3]=(hh[3]+d)|0;
+    hh[4]=(hh[4]+e)|0;hh[5]=(hh[5]+f)|0;hh[6]=(hh[6]+g)|0;hh[7]=(hh[7]+h)|0;
+  }
+  return hh.map(x=>('00000000'+(x>>>0).toString(16)).slice(-8)).join('');
+}
+
+function tryUnlock(){
+  const pw = document.getElementById('gatePw').value;
+  if (sha256(pw) === ADMIN_PASSWORD_HASH){
+    document.getElementById('gate').remove();
+    document.body.classList.remove('locked');
+    boot();
+  } else {
+    document.getElementById('gateErr').textContent = 'INCORRECT PASSWORD';
+    document.getElementById('gatePw').value = '';
+  }
+}
+
+function makeHash(){
+  const v = document.getElementById('pwNew').value;
+  document.getElementById('pwHash').textContent = v ? sha256(v) : '—';
+}
+
+// ================== EDITOR ==================
 let C = null;
 const $ = id => document.getElementById(id);
 const status = msg => { $('status').textContent = msg; };
@@ -316,7 +422,7 @@ function importJSON(ev){
   rd.readAsText(f);
 }
 
-boot();
+// boot() runs after the password gate unlocks
 </script>
 </body>
 </html>
